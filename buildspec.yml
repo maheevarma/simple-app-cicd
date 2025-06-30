@@ -1,0 +1,43 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo Installing dependencies...
+      - npm install
+  
+  pre_build:
+    commands:
+      - echo Running tests...
+      - npm test
+      - echo Login to Amazon ECR if using Docker (optional)
+  
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the application...
+      - npm run start &
+      - sleep 5
+      - curl -f http://localhost:3000/health || exit 1
+      - pkill -f "node app.js"
+      - echo Build completed on `date`
+  
+  post_build:
+    commands:
+      - echo Build phase completed
+      - echo Creating deployment package...
+
+artifacts:
+  files:
+    - '**/*'
+  exclude-paths:
+    - node_modules/**/*
+    - .git/**/*
+    - '*.md'
+  name: simple-cicd-app-$(date +%Y-%m-%d-%H-%M-%S)
+
+cache:
+  paths:
+    - node_modules/**/*
